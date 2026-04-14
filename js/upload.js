@@ -26,12 +26,77 @@ function fileIcon(name) {
     pdf: '📄', doc: '📝', docx: '📝', xls: '📊', xlsx: '📊',
     ppt: '📑', pptx: '📑', zip: '🗜', rar: '🗜', '7z': '🗜',
     jpg: '🖼', jpeg: '🖼', png: '🖼', gif: '🖼', webp: '🖼',
+    heic: '🖼', heif: '🖼',
     svg: '🖼', mp4: '🎬', mov: '🎬', avi: '🎬', mkv: '🎬',
     mp3: '🎵', wav: '🎵', flac: '🎵', ogg: '🎵',
     txt: '📃', csv: '📊', json: '🗂', xml: '🗂', html: '🌐',
     css: '🎨', js: '⚡', py: '🐍', rb: '💎',
   };
   return map[ext] || '📦';
+}
+
+/* ── Utility: sanitize filename for storage paths ── */
+function sanitizeFileName(name) {
+  const dot = name.lastIndexOf('.');
+  const base = dot > 0 ? name.slice(0, dot) : name;
+  const ext = dot > 0 ? name.slice(dot) : '';
+
+  // Remove path separators/control chars and keep a predictable filename for storage.
+  const safeBase = base
+    .replace(/[\\/:*?"<>|\u0000-\u001F]/g, '-')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 80) || 'file';
+
+  return `${safeBase}${ext}`;
+}
+
+/* ── Utility: detect retryable network/storage errors ── */
+function isTransientError(err) {
+  const msg = String(err?.message || err || '').toLowerCase();
+  return (
+    msg.includes('failed to fetch') ||
+    msg.includes('networkerror') ||
+    msg.includes('network request failed') ||
+    msg.includes('timeout') ||
+    msg.includes('load failed') ||
+    msg.includes('502') ||
+    msg.includes('503') ||
+    msg.includes('504')
+  );
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/* ── Utility: upload with mobile-browser fallback ── */
+async function uploadWithFallback(path, file) {
+  const tryPrimary = await supabaseClient
+    .storage
+    .from(BUCKET_NAME)
+    .upload(path, file, { cacheControl: '3600', upsert: true, contentType: file.type || undefined });
+
+  if (!tryPrimary.error) return tryPrimary;
+
+  // Some mobile browsers are flaky with direct File uploads; retry as Blob.
+  const arr = await file.arrayBuffer();
+  const blob = new Blob([arr], { type: file.type || 'application/octet-stream' });
+  const tryFallback = await supabaseClient
+    .storage
+    .from(BUCKET_NAME)
+    .upload(path, blob, { cacheControl: '3600', upsert: true, contentType: file.type || 'application/octet-stream' });
+
+  if (!tryFallback.error) return tryFallback;
+
+  // If the first request actually succeeded server-side, retry can fail as duplicate.
+  const duplicateObject = /already exists|duplicate|conflict/i.test(String(tryFallback.error?.message || ''));
+  if (duplicateObject) {
+    return { data: { path }, error: null };
+  }
+
+  return tryFallback;
 }
 
 /* ── Utility: generate unique ID ── */
@@ -42,6 +107,7 @@ function generateId() {
 
 /* ── State ── */
 let selectedFile = null;
+let isUploading = false;
 
 /* ── DOM refs ── */
 const dropZone     = document.getElementById('dropZone');
@@ -116,6 +182,8 @@ function handleFileSelect(file) {
 /* ── Reset to initial drop-zone state ── */
 function resetUpload() {
   selectedFile = null;
+  isUploading = false;
+  uploadBtn.disabled = false;
   fileInput.value = '';
   dropZone.style.display = '';
   fileOptions.style.display = 'none';
@@ -128,7 +196,7 @@ function resetUpload() {
 
 /* ── Upload handler ── */
 uploadBtn.addEventListener('click', async () => {
-  if (!selectedFile) return;
+  if (!selectedFile || isUploading) return;
 
   // Validate Supabase config
   if (SUPABASE_URL.includes('YOUR_') || SUPABASE_ANON_KEY.includes('YOUR_')) {
@@ -136,10 +204,14 @@ uploadBtn.addEventListener('click', async () => {
     return;
   }
 
+  isUploading = true;
+  uploadBtn.disabled = true;
+
   const fileId   = generateId();
   const expiry   = expirySelect.value;
   const password = passwordInput.value.trim();
-  const storagePath = `${fileId}/${selectedFile.name}`;
+  const safeFileName = sanitizeFileName(selectedFile.name);
+  const storagePath = `${fileId}/${safeFileName}`;
 
   // Calculate expiry timestamp (null = never)
   let expiresAt = null;
@@ -166,12 +238,19 @@ uploadBtn.addEventListener('click', async () => {
 
   try {
     /* ── 1. Upload file to Supabase Storage ── */
-    const { data: storageData, error: storageError } = await supabaseClient
-      .storage
-      .from(BUCKET_NAME)
-      .upload(storagePath, selectedFile, { cacheControl: '3600', upsert: false });
+    let storageError = null;
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      const { error } = await uploadWithFallback(storagePath, selectedFile);
+      storageError = error;
+      if (!storageError) break;
 
-    if (storageError) throw storageError;
+      if (!isTransientError(storageError) || attempt === 3) {
+        throw storageError;
+      }
+
+      progressStatus.textContent = `Retrying upload (${attempt}/2)...`;
+      await wait(350 * attempt);
+    }
 
     /* ── 2. Get public URL ── */
     const { data: urlData } = supabaseClient
@@ -182,21 +261,34 @@ uploadBtn.addEventListener('click', async () => {
     const publicUrl = urlData.publicUrl;
 
     /* ── 3. Store metadata in database ── */
-    const { error: dbError } = await supabaseClient
-      .from('files')
-      .insert({
-        id:             fileId,
-        name:           selectedFile.name,
-        size:           selectedFile.size,
-        url:            publicUrl,
-        storage_path:   storagePath,
-        password:       password || null,
-        expires_at:     expiresAt,
-        max_downloads:  maxDownloads,
-        download_count: 0,
-      });
+    const metadata = {
+      id:             fileId,
+      name:           selectedFile.name,
+      size:           selectedFile.size,
+      url:            publicUrl,
+      storage_path:   storagePath,
+      password:       password || null,
+      expires_at:     expiresAt,
+      max_downloads:  maxDownloads,
+      download_count: 0,
+    };
 
-    if (dbError) throw dbError;
+    let dbError = null;
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      const { error } = await supabaseClient
+        .from('files')
+        .upsert(metadata, { onConflict: 'id' });
+
+      dbError = error;
+      if (!dbError) break;
+
+      if (!isTransientError(dbError) || attempt === 3) {
+        throw dbError;
+      }
+
+      progressStatus.textContent = `Finalizing link (${attempt}/2)...`;
+      await wait(300 * attempt);
+    }
 
     /* ── Finalize progress ── */
     clearInterval(progressInterval);
@@ -223,6 +315,7 @@ uploadBtn.addEventListener('click', async () => {
       });
 
       showToast('File uploaded successfully!', 'success');
+      isUploading = false;
     }, 600);
 
   } catch (err) {
@@ -237,6 +330,8 @@ uploadBtn.addEventListener('click', async () => {
     setTimeout(() => {
       progressWrap.style.display = 'none';
       fileOptions.style.display = 'block';
+      isUploading = false;
+      uploadBtn.disabled = false;
     }, 2000);
   }
 });

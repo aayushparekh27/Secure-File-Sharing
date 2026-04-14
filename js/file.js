@@ -179,10 +179,19 @@ function renderFileCard(data) {
   const downloadBtn = document.getElementById('downloadBtn');
   downloadBtn.href     = data.url;
   downloadBtn.download = data.name;
-  downloadBtn.setAttribute('target', '_blank');
+  downloadBtn.removeAttribute('target');
 
-  downloadBtn.addEventListener('click', async () => {
-    // Increment download counter in DB
+  downloadBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+
+    try {
+      await forceDownload(data.url, data.name);
+    } catch {
+      // Fallback for stricter browser policies.
+      window.open(data.url, '_blank', 'noopener,noreferrer');
+    }
+
+    // Increment download counter in DB after click/download attempt.
     try {
       await supabaseClient
         .from('files')
@@ -264,4 +273,22 @@ function showError(msg) {
   fileCard.style.display      = 'none';
   errorMsg.textContent        = msg;
   errorState.style.display    = 'block';
+}
+
+/* ── Force browser download (avoid inline preview for images/PDF) ── */
+async function forceDownload(url, fileName) {
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) throw new Error('Could not fetch file for download.');
+
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = objectUrl;
+  a.download = fileName || 'download';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  URL.revokeObjectURL(objectUrl);
 }
