@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VaultDrop — Download File</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/file.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <nav class="navbar">
+    <a href="index.html" class="nav-logo">
+      <span class="logo-icon">⬡</span>
+      <span class="logo-text">VaultDrop</span>
+    </a>
+    <div class="nav-tag">Secure · Fast · Private</div>
+  </nav>
+
+  <main class="main-container file-page-main">
+
+    <!-- Loading State -->
+    <div class="state-wrap" id="loadingState">
+      <div class="spinner"></div>
+      <p class="state-text">Retrieving your file...</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="state-wrap is-hidden" id="errorState">
+      <div class="error-icon">✕</div>
+      <h2 class="state-title">File Not Found</h2>
+      <p class="state-text" id="errorMsg">This link is invalid or has expired.</p>
+      <a href="index.html" class="btn-upload btn-upload-link">
+        Upload a New File
+      </a>
+    </div>
+
+    <!-- Password Gate -->
+    <div class="state-wrap is-hidden" id="passwordState">
+      <div class="lock-icon">🔒</div>
+      <h2 class="state-title">Password Protected</h2>
+      <p class="state-text">Enter the password to access this file.</p>
+      <div class="pw-form">
+        <input type="password" class="option-input pw-input" id="pwInput" placeholder="Enter password..." />
+        <button class="btn-upload pw-btn" id="pwSubmit">
+          <span class="btn-text">Unlock</span>
+          <span class="btn-arrow">→</span>
+        </button>
+      </div>
+      <p class="pw-error is-hidden" id="pwError">Incorrect password. Try again.</p>
+    </div>
+
+    <!-- File Card -->
+    <div class="file-card is-hidden" id="fileCard">
+      <!-- File Icon & Info -->
+      <div class="file-hero">
+        <div class="file-type-badge" id="fileTypeBadge"></div>
+        <div class="file-meta-main">
+          <h2 class="file-name" id="fileName">filename.ext</h2>
+          <div class="file-stats">
+            <span class="stat-pill" id="fileSize">— KB</span>
+            <span class="stat-pill" id="fileUploaded">—</span>
+            <span class="stat-pill" id="fileDownloads">0 downloads</span>
+            <span class="stat-pill expiry-pill" id="fileExpiry"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview Area -->
+      <div class="preview-area" id="previewArea"></div>
+
+      <!-- Download Button -->
+      <div class="download-actions">
+        <a class="btn-download" id="downloadBtn" href="#" download>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 4v12M12 16l-4-4M12 16l4-4"/><path d="M4 20h16"/>
+          </svg>
+          Download File
+        </a>
+        <a href="index.html" class="btn-share-own">Share your own file →</a>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="footer">
+    <p>VaultDrop &copy; 2025 · Files stored securely via Supabase</p>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/file.js"></script>
+</body>
+</html>

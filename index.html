@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VaultDrop — Secure File Sharing</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- QRCode library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+  <!-- Animated background grid -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <!-- Nav -->
+  <nav class="navbar">
+    <div class="nav-logo">
+      <span class="logo-icon">⬡</span>
+      <span class="logo-text">VaultDrop</span>
+    </div>
+    <div class="nav-tag">Secure · Fast · Private</div>
+  </nav>
+
+  <!-- Hero Section -->
+  <main class="main-container">
+    <section class="hero">
+      <div class="hero-badge">End-to-End Encrypted</div>
+      <h1 class="hero-title">Drop files.<br><span class="accent">Share instantly.</span></h1>
+      <p class="hero-sub">Upload any file up to 50MB. Get a shareable link in seconds. No account needed.</p>
+    </section>
+
+    <!-- Upload Card -->
+    <section class="upload-card" id="uploadCard">
+      <!-- Drop Zone -->
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-icon">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <path d="M24 4L24 32M24 4L14 14M24 4L34 14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M6 36V40C6 41.1 6.9 42 8 42H40C41.1 42 42 41.1 42 40V36" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <p class="drop-title">Drag & drop your file here</p>
+        <p class="drop-sub">or</p>
+        <label class="btn-browse" for="fileInput">Browse Files</label>
+        <input type="file" id="fileInput" hidden />
+        <p class="drop-hint">Supports all file types · Max 50MB</p>
+      </div>
+
+      <!-- File Options -->
+      <div class="file-options is-hidden" id="fileOptions">
+        <!-- Selected File Preview -->
+        <div class="selected-file" id="selectedFile"></div>
+
+        <!-- Options Row -->
+        <div class="options-grid">
+          <!-- Expiry -->
+          <div class="option-group">
+            <label class="option-label">
+              <span class="opt-icon">⏱</span> Expiry
+            </label>
+            <select class="option-select" id="expirySelect" title="Link expiry">
+              <option value="never">Never</option>
+              <option value="1">1 Hour</option>
+              <option value="24" selected>24 Hours</option>
+              <option value="72">3 Days</option>
+              <option value="168">7 Days</option>
+              <option value="downloads1">After 1 Download</option>
+            </select>
+          </div>
+
+          <!-- Password -->
+          <div class="option-group">
+            <label class="option-label">
+              <span class="opt-icon">🔒</span> Password (optional)
+            </label>
+            <input type="password" class="option-input" id="passwordInput" placeholder="Leave blank for none" />
+          </div>
+        </div>
+
+        <!-- Upload Button -->
+        <button class="btn-upload" id="uploadBtn">
+          <span class="btn-text">Upload & Generate Link</span>
+          <span class="btn-arrow">→</span>
+        </button>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="progress-wrap is-hidden" id="progressWrap">
+        <div class="progress-header">
+          <span id="progressFileName"></span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <p class="progress-status" id="progressStatus">Uploading...</p>
+      </div>
+
+      <!-- Success State -->
+      <div class="success-wrap is-hidden" id="successWrap">
+        <div class="success-icon">✓</div>
+        <h3 class="success-title">File Uploaded!</h3>
+        <p class="success-sub">Your secure link is ready to share.</p>
+
+        <div class="link-box">
+          <input type="text" class="link-input" id="shareLink" aria-label="Share link" title="Share link" readonly />
+          <button class="btn-copy" id="copyBtn" title="Copy link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="success-actions">
+          <div class="qr-wrap">
+            <div id="qrCode"></div>
+            <p class="qr-label">QR Code</p>
+          </div>
+          <button class="btn-new" id="newUploadBtn">Upload Another File</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="trust-strip" aria-label="Highlights">
+      <div class="trust-chip">🔐 <strong>Private</strong> by default</div>
+      <div class="trust-chip">⚡ Share links in <strong>seconds</strong></div>
+      <div class="trust-chip">📦 Works with <strong>all file types</strong></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>VaultDrop &copy; 2025 · Files stored securely via Supabase</p>
+  </footer>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/upload.js"></script>
+</body>
+</html>
