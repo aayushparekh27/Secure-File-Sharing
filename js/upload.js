@@ -52,9 +52,23 @@ function sanitizeFileName(name) {
   return `${safeBase}${ext}`;
 }
 
+/* ── Utility: cross-browser file to ArrayBuffer ── */
+function toArrayBuffer(file) {
+  if (file && typeof file.arrayBuffer === 'function') {
+    return file.arrayBuffer();
+  }
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = function onLoad() { resolve(reader.result); };
+    reader.onerror = function onError() { reject(new Error('Could not read file data.')); };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
 /* ── Utility: detect retryable network/storage errors ── */
 function isTransientError(err) {
-  const msg = String(err?.message || err || '').toLowerCase();
+  const msg = String((err && err.message) || err || '').toLowerCase();
   return (
     msg.includes('failed to fetch') ||
     msg.includes('networkerror') ||
@@ -81,7 +95,7 @@ async function uploadWithFallback(path, file) {
   if (!tryPrimary.error) return tryPrimary;
 
   // Some mobile browsers are flaky with direct File uploads; retry as Blob.
-  const arr = await file.arrayBuffer();
+  const arr = await toArrayBuffer(file);
   const blob = new Blob([arr], { type: file.type || 'application/octet-stream' });
   const tryFallback = await supabaseClient
     .storage
@@ -91,7 +105,7 @@ async function uploadWithFallback(path, file) {
   if (!tryFallback.error) return tryFallback;
 
   // If the first request actually succeeded server-side, retry can fail as duplicate.
-  const duplicateObject = /already exists|duplicate|conflict/i.test(String(tryFallback.error?.message || ''));
+  const duplicateObject = /already exists|duplicate|conflict/i.test(String((tryFallback.error && tryFallback.error.message) || ''));
   if (duplicateObject) {
     return { data: { path }, error: null };
   }
