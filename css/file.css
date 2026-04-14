@@ -10,7 +10,7 @@
   justify-content: center;
   min-height: calc(100vh - 120px);
   padding-top: 1.4rem;
-  padding-bottom: 2rem;
+  padding-bottom: 1.4rem;
 }
 
 /* ── State Wrappers (loading, error, password) ── */
@@ -23,6 +23,7 @@
   border-radius: 22px;
   padding: 1.6rem 1.2rem;
   box-shadow: var(--shadow);
+  margin: 0 auto;
 }
 
 /* Spinner */
@@ -108,6 +109,7 @@
   padding: clamp(1rem, 3vw, 2rem);
   box-shadow: var(--shadow);
   animation: fadeUp 0.4s ease both;
+  margin: 0 auto;
 }
 
 @keyframes fadeUp {
@@ -210,6 +212,11 @@
   display: block;
 }
 
+.preview-area pre {
+  overflow: auto;
+  max-width: 100%;
+}
+
 /* No preview */
 .no-preview {
   display: flex;
@@ -248,6 +255,7 @@
   transition: all 0.2s ease;
   letter-spacing: 0.01em;
   min-width: 180px;
+  min-height: 48px;
 }
 .btn-download:hover { background: #ff8e61; transform: translateY(-2px); box-shadow: 0 10px 28px var(--accent-glow); }
 
@@ -261,8 +269,20 @@
 .btn-share-own:hover { color: var(--text-main); }
 
 @media (max-width: 860px) {
+  .file-page-main {
+    padding-top: 0.85rem;
+  }
+
   .file-card {
     max-width: 100%;
+  }
+
+  .file-hero {
+    gap: 1rem;
+  }
+
+  .file-stats {
+    gap: 0.5rem;
   }
 
   .preview-area iframe {
@@ -278,13 +298,13 @@
 
   .state-wrap {
     max-width: 100%;
-    padding: 1.1rem 0.8rem;
+    padding: 1rem 0.72rem;
     border-radius: 18px;
   }
 
   .file-card {
     border-radius: 18px;
-    padding: 0.85rem;
+    padding: 0.82rem;
   }
 
   .file-hero {
@@ -308,6 +328,7 @@
 
   .stat-pill {
     font-size: 0.68rem;
+    padding: 0.22rem 0.55rem;
   }
 
   .preview-area img,
@@ -328,10 +349,35 @@
   .btn-download {
     width: 100%;
     min-width: 0;
+    min-height: 46px;
   }
 
   .btn-share-own {
     text-align: center;
     font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .state-title {
+    font-size: 1.35rem;
+  }
+
+  .state-text {
+    font-size: 0.87rem;
+  }
+
+  .file-type-badge {
+    width: 48px;
+    height: 48px;
+    font-size: 1.35rem;
+  }
+
+  .preview-area iframe {
+    height: 240px;
+  }
+
+  .no-preview {
+    padding: 1.7rem 1rem;
   }
 }
