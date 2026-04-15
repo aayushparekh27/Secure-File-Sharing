@@ -226,6 +226,17 @@ Or maybe… just the beginning.
     <p>VaultDrop &copy; 2026 All right reserved | By Aayush Parekh</p>
   </footer>
 
+  <!-- High load advisory popup -->
+  <div class="notice-modal" id="highLoadModal" role="dialog" aria-modal="true" aria-labelledby="highLoadTitle" aria-describedby="highLoadDesc">
+    <div class="notice-card">
+      <button class="notice-close" id="closeHighLoadModal" type="button" aria-label="Close advisory">&times;</button>
+      <p class="notice-kicker">Upload Advisory</p>
+      <h3 class="notice-title" id="highLoadTitle">Server is currently running at high load</h3>
+      <p class="notice-desc" id="highLoadDesc">If your upload does not complete on the first attempt, please try again after a few seconds.</p>
+      <button class="notice-btn" id="ackHighLoadModal" type="button">Got it, I will retry</button>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div class="toast" id="toast"></div>
 

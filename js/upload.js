@@ -141,6 +141,33 @@ const newUploadBtn = document.getElementById('newUploadBtn');
 const qrCode = document.getElementById('qrCode');
 const expirySelect = document.getElementById('expirySelect');
 const passwordInput = document.getElementById('passwordInput');
+const highLoadModal = document.getElementById('highLoadModal');
+const closeHighLoadModal = document.getElementById('closeHighLoadModal');
+const ackHighLoadModal = document.getElementById('ackHighLoadModal');
+
+/* ── High-load advisory popup ── */
+function closeAdvisoryModal() {
+  if (!highLoadModal) return;
+  highLoadModal.classList.remove('is-open');
+}
+
+if (highLoadModal) {
+  // Small delay avoids sudden pop-in at first paint.
+  setTimeout(() => {
+    highLoadModal.classList.add('is-open');
+  }, 280);
+
+  closeHighLoadModal?.addEventListener('click', closeAdvisoryModal);
+  ackHighLoadModal?.addEventListener('click', closeAdvisoryModal);
+
+  highLoadModal.addEventListener('click', (e) => {
+    if (e.target === highLoadModal) closeAdvisoryModal();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeAdvisoryModal();
+  });
+}
 
 /* ── Drag & Drop handlers ── */
 dropZone.addEventListener('dragover', (e) => {
