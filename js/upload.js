@@ -8,14 +8,14 @@
 function showToast(msg, type = '') {
   const toast = document.getElementById('toast');
   toast.textContent = msg;
-  toast.className   = `toast ${type} show`;
+  toast.className = `toast ${type} show`;
   setTimeout(() => { toast.className = 'toast'; }, 3000);
 }
 
 /* ── Utility: human-readable file size ── */
 function formatSize(bytes) {
-  if (bytes < 1024)       return bytes + ' B';
-  if (bytes < 1048576)    return (bytes / 1024).toFixed(1) + ' KB';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
   return (bytes / 1048576).toFixed(2) + ' MB';
 }
 
@@ -116,7 +116,7 @@ async function uploadWithFallback(path, file) {
 /* ── Utility: generate unique ID ── */
 function generateId() {
   return Math.random().toString(36).substring(2, 10) +
-         Date.now().toString(36);
+    Date.now().toString(36);
 }
 
 /* ── State ── */
@@ -124,21 +124,21 @@ let selectedFile = null;
 let isUploading = false;
 
 /* ── DOM refs ── */
-const dropZone     = document.getElementById('dropZone');
-const fileInput    = document.getElementById('fileInput');
-const fileOptions  = document.getElementById('fileOptions');
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const fileOptions = document.getElementById('fileOptions');
 const selectedFileEl = document.getElementById('selectedFile');
-const uploadBtn    = document.getElementById('uploadBtn');
+const uploadBtn = document.getElementById('uploadBtn');
 const progressWrap = document.getElementById('progressWrap');
-const progressBar  = document.getElementById('progressBar');
+const progressBar = document.getElementById('progressBar');
 const progressPercent = document.getElementById('progressPercent');
 const progressFileName = document.getElementById('progressFileName');
 const progressStatus = document.getElementById('progressStatus');
-const successWrap  = document.getElementById('successWrap');
-const shareLink    = document.getElementById('shareLink');
-const copyBtn      = document.getElementById('copyBtn');
+const successWrap = document.getElementById('successWrap');
+const shareLink = document.getElementById('shareLink');
+const copyBtn = document.getElementById('copyBtn');
 const newUploadBtn = document.getElementById('newUploadBtn');
-const qrCode       = document.getElementById('qrCode');
+const qrCode = document.getElementById('qrCode');
 const expirySelect = document.getElementById('expirySelect');
 const passwordInput = document.getElementById('passwordInput');
 
@@ -221,8 +221,8 @@ uploadBtn.addEventListener('click', async () => {
   isUploading = true;
   uploadBtn.disabled = true;
 
-  const fileId   = generateId();
-  const expiry   = expirySelect.value;
+  const fileId = generateId();
+  const expiry = expirySelect.value;
   const password = passwordInput.value.trim();
   const safeFileName = sanitizeFileName(selectedFile.name);
   const storagePath = `${fileId}/${safeFileName}`;
@@ -276,14 +276,14 @@ uploadBtn.addEventListener('click', async () => {
 
     /* ── 3. Store metadata in database ── */
     const metadata = {
-      id:             fileId,
-      name:           selectedFile.name,
-      size:           selectedFile.size,
-      url:            publicUrl,
-      storage_path:   storagePath,
-      password:       password || null,
-      expires_at:     expiresAt,
-      max_downloads:  maxDownloads,
+      id: fileId,
+      name: selectedFile.name,
+      size: selectedFile.size,
+      url: publicUrl,
+      storage_path: storagePath,
+      password: password || null,
+      expires_at: expiresAt,
+      max_downloads: maxDownloads,
       download_count: 0,
     };
 
@@ -321,10 +321,10 @@ uploadBtn.addEventListener('click', async () => {
       // Generate QR Code
       qrCode.innerHTML = '';
       new QRCode(qrCode, {
-        text:   link,
-        width:  100,
+        text: link,
+        width: 100,
         height: 100,
-        colorDark:  '#f5a623',
+        colorDark: '#f5a623',
         colorLight: '#111115',
       });
 
