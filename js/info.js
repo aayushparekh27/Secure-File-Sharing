@@ -22,7 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       'contact': {
         title: 'Contact',
-        body: '<p>Email: <a href="mailto:thelocalgrowthstudio@gmail.com" style="color:var(--accent); text-decoration: none;">thelocalgrowthstudio@gmail.com</a></p>'
+        body: '<p>Email: <a href="mailto:thelocalgrowthstudio@gmail.com" style="color:var(--accent); text-decoration: none;">thelocalgrowthstudio@gmail.com</a></p>' +
+              '<p>Email: <a href="mailto:aayushparekh26@gmail.com" style="color:var(--accent); text-decoration: none;">aayushparekh26@gmail.com</a></p>'
       }
     };
   
