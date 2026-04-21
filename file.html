@@ -185,13 +185,28 @@ Or maybe… just the beginning.
   </main>
 
   <footer class="footer">
-    <p>VaultDrop &copy; 2026 All right reserved | By Aayush Parekh</p>
+    <div class="footer-links">
+      <a href="#" id="linkAbout">About Us</a>
+      <a href="#" id="linkPrivacy">Privacy Policy</a>
+      <a href="#" id="linkContact">Contact</a>
+    </div>
+    <p>VaultDrop &copy; 2026 All rights reserved | By Aayush Parekh</p>
   </footer>
 
   <div class="toast" id="toast"></div>
 
+  <!-- Info Modal -->
+  <div class="notice-modal" id="infoModal" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+    <div class="notice-card info-card">
+      <button class="notice-close" id="closeInfoModal" type="button" aria-label="Close modal">&times;</button>
+      <h3 class="notice-title" id="infoTitle"></h3>
+      <div class="notice-desc info-body" id="infoBody"></div>
+    </div>
+  </div>
+
   <script src="js/config.js"></script>
   <script src="js/file.js"></script>
+  <script src="js/info.js"></script>
 </body>
 
 </html>

@@ -611,6 +611,54 @@ body {
   font-size: 0.8rem;
 }
 
+.footer-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.footer-links a {
+  color: var(--text-sub);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.footer-links a:hover {
+  color: var(--accent);
+  text-shadow: 0 0 12px var(--accent-glow);
+}
+
+.info-card {
+  max-width: 640px;
+  text-align: left;
+}
+
+.info-body {
+  margin-top: 1rem;
+  color: var(--text-sub);
+  line-height: 1.7;
+}
+
+.info-body p {
+  margin-bottom: 0.85rem;
+  font-size: 0.95rem;
+}
+
+.info-body a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.info-body a:hover {
+  color: #ff8e61;
+}
+
 @media (max-width: 1024px) {
   .main-container {
     padding-top: 1.8rem;
