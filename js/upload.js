@@ -19,20 +19,46 @@ function formatSize(bytes) {
   return (bytes / 1048576).toFixed(2) + ' MB';
 }
 
-/* ── Utility: file-type emoji icon ── */
+/* ── Utility: file-type SVG icon ── */
 function fileIcon(name) {
   const ext = name.split('.').pop().toLowerCase();
+  
+  const getSvg = (color, pathData) => `
+    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: ${color}">
+      ${pathData}
+    </svg>
+  `;
+
   const map = {
-    pdf: '📄', doc: '📝', docx: '📝', xls: '📊', xlsx: '📊',
-    ppt: '📑', pptx: '📑', zip: '🗜', rar: '🗜', '7z': '🗜',
-    jpg: '🖼', jpeg: '🖼', png: '🖼', gif: '🖼', webp: '🖼',
-    heic: '🖼', heif: '🖼',
-    svg: '🖼', mp4: '🎬', mov: '🎬', avi: '🎬', mkv: '🎬',
-    mp3: '🎵', wav: '🎵', flac: '🎵', ogg: '🎵',
-    txt: '📃', csv: '📊', json: '🗂', xml: '🗂', html: '🌐',
-    css: '🎨', js: '⚡', py: '🐍', rb: '💎',
+    pdf: getSvg('#ff4757', '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M9 15v-4"></path><path d="M12 15v-4"></path><path d="M15 15v-4"></path>'),
+    doc: getSvg('#2e86de', '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline>'),
+    docx: getSvg('#2e86de', '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline>'),
+    xls: getSvg('#10ac84', '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M8 13h2"></path><path d="M8 17h2"></path><path d="M14 13h2"></path><path d="M14 17h2"></path>'),
+    xlsx: getSvg('#10ac84', '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M8 13h2"></path><path d="M8 17h2"></path><path d="M14 13h2"></path><path d="M14 17h2"></path>'),
+    csv: getSvg('#10ac84', '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line>'),
+    zip: getSvg('#feca57', '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>'),
+    rar: getSvg('#feca57', '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>'),
+    '7z': getSvg('#feca57', '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>'),
+    jpg: getSvg('#0abde3', '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline>'),
+    jpeg: getSvg('#0abde3', '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline>'),
+    png: getSvg('#0abde3', '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline>'),
+    gif: getSvg('#0abde3', '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline>'),
+    webp: getSvg('#0abde3', '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline>'),
+    svg: getSvg('#f368e0', '<polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline>'),
+    mp4: getSvg('#ee5253', '<rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line>'),
+    mov: getSvg('#ee5253', '<rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line>'),
+    avi: getSvg('#ee5253', '<rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line>'),
+    mkv: getSvg('#ee5253', '<rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line>'),
+    mp3: getSvg('#9b59b6', '<path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle>'),
+    wav: getSvg('#9b59b6', '<path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle>'),
+    txt: getSvg('#95a5a6', '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline>'),
+    json: getSvg('#f1c40f', '<ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>'),
+    xml: getSvg('#f1c40f', '<ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>'),
+    html: getSvg('#e17055', '<polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>'),
+    css: getSvg('#0984e3', '<polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>'),
+    js: getSvg('#fdcb6e', '<polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>'),
   };
-  return map[ext] || '📦';
+  return map[ext] || getSvg('#a4b0be', '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline>');
 }
 
 /* ── Utility: sanitize filename for storage paths ── */
@@ -52,65 +78,44 @@ function sanitizeFileName(name) {
   return `${safeBase}${ext}`;
 }
 
-/* ── Utility: cross-browser file to ArrayBuffer ── */
-function toArrayBuffer(file) {
-  if (file && typeof file.arrayBuffer === 'function') {
-    return file.arrayBuffer();
-  }
-
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = function onLoad() { resolve(reader.result); };
-    reader.onerror = function onError() { reject(new Error('Could not read file data.')); };
-    reader.readAsArrayBuffer(file);
-  });
-}
-
 /* ── Utility: detect retryable network/storage errors ── */
 function isTransientError(err) {
   const msg = String((err && err.message) || err || '').toLowerCase();
-  return (
-    msg.includes('failed to fetch') ||
-    msg.includes('networkerror') ||
-    msg.includes('network request failed') ||
-    msg.includes('timeout') ||
-    msg.includes('load failed') ||
-    msg.includes('502') ||
-    msg.includes('503') ||
-    msg.includes('504')
-  );
+  
+  // Non-retryable user/auth/limit errors
+  if (msg.includes('403') || msg.includes('401') || msg.includes('unauthorized') || msg.includes('row level security') || msg.includes('exceeds limit') || msg.includes('payload too large')) {
+    return false;
+  }
+  
+  // Treat everything else (network drops, timeout, DNS failure on wake) as transient on mobile
+  return true;
 }
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/* ── Utility: upload with mobile-browser fallback ── */
+/* ── Utility: direct upload with duplicate check ── */
 async function uploadWithFallback(path, file) {
-  const tryPrimary = await supabaseClient
-    .storage
-    .from(BUCKET_NAME)
-    .upload(path, file, { cacheControl: '3600', upsert: true, contentType: file.type || undefined });
+  try {
+    const result = await supabaseClient
+      .storage
+      .from(BUCKET_NAME)
+      .upload(path, file, { cacheControl: '3600', upsert: true, contentType: file.type || undefined });
 
-  if (!tryPrimary.error) return tryPrimary;
+    if (!result.error) return result;
 
-  // Some mobile browsers are flaky with direct File uploads; retry as Blob.
-  const arr = await toArrayBuffer(file);
-  const blob = new Blob([arr], { type: file.type || 'application/octet-stream' });
-  const tryFallback = await supabaseClient
-    .storage
-    .from(BUCKET_NAME)
-    .upload(path, blob, { cacheControl: '3600', upsert: true, contentType: file.type || 'application/octet-stream' });
+    // If a request timed out locally but succeeded on the server, retries will hit a conflict.
+    const duplicateObject = /already exists|duplicate|conflict/i.test(String((result.error && result.error.message) || ''));
+    if (duplicateObject) {
+      return { data: { path }, error: null };
+    }
 
-  if (!tryFallback.error) return tryFallback;
-
-  // If the first request actually succeeded server-side, retry can fail as duplicate.
-  const duplicateObject = /already exists|duplicate|conflict/i.test(String((tryFallback.error && tryFallback.error.message) || ''));
-  if (duplicateObject) {
-    return { data: { path }, error: null };
+    return result;
+  } catch (err) {
+    // Network failures often THROW natively instead of returning an error object.
+    return { data: null, error: err };
   }
-
-  return tryFallback;
 }
 
 /* ── Utility: generate unique ID ── */
@@ -187,7 +192,13 @@ dropZone.addEventListener('drop', (e) => {
 });
 
 /* Click-to-browse also triggers from the dropzone */
-dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('click', (e) => {
+  // Prevent double-triggering if the user clicked the label natively.
+  // This causes mobile browsers to cancel the file picker selection.
+  if (e.target.tagName !== 'LABEL' && e.target.tagName !== 'INPUT') {
+    fileInput.click();
+  }
+});
 
 fileInput.addEventListener('change', () => {
   if (fileInput.files[0]) handleFileSelect(fileInput.files[0]);
@@ -207,11 +218,17 @@ function handleFileSelect(file) {
   selectedFileEl.innerHTML = `
     <div class="sf-icon">${fileIcon(file.name)}</div>
     <div class="sf-info">
-      <div class="sf-name" title="${file.name}">${file.name}</div>
+      <div class="sf-name" id="selectedFileNameDisplay"></div>
       <div class="sf-size">${formatSize(file.size)}</div>
     </div>
     <button class="sf-remove" id="removeFileBtn" title="Remove">✕</button>
   `;
+  
+  const nameDisplay = document.getElementById('selectedFileNameDisplay');
+  if (nameDisplay) {
+    nameDisplay.textContent = file.name;
+    nameDisplay.title = file.name;
+  }
 
   // Hide dropzone, show options
   dropZone.style.display = 'none';
@@ -316,11 +333,16 @@ uploadBtn.addEventListener('click', async () => {
 
     let dbError = null;
     for (let attempt = 1; attempt <= 3; attempt += 1) {
-      const { error } = await supabaseClient
-        .from('files')
-        .upsert(metadata, { onConflict: 'id' });
+      try {
+        const { error } = await supabaseClient
+          .from('files')
+          .upsert(metadata, { onConflict: 'id' });
+        
+        dbError = error;
+      } catch (err) {
+        dbError = err;
+      }
 
-      dbError = error;
       if (!dbError) break;
 
       if (!isTransientError(dbError) || attempt === 3) {
