@@ -144,6 +144,25 @@ index.html
 
 or deploy on **Vercel**
 
+### 6️⃣ Search Console Setup
+
+Keep the Google verification file at the site root:
+
+```text
+googlebb2f2bac71c63b54.html
+```
+
+Also keep these root files live after deployment:
+
+* `robots.txt`
+* `sitemap.xml`
+
+Current sitemap URL:
+
+```text
+https://vaultdrop-app.vercel.app/sitemap.xml
+```
+
 ---
 
 ## 🔐 Security Features
