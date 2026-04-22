@@ -65,17 +65,33 @@ function fileIcon(name) {
 function sanitizeFileName(name) {
   const dot = name.lastIndexOf('.');
   const base = dot > 0 ? name.slice(0, dot) : name;
-  const ext = dot > 0 ? name.slice(dot) : '';
+  const ext = dot > 0 ? name.slice(dot).toLowerCase() : '';
+
+  const normalizeAscii = (value) => value
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '');
 
   // Remove path separators/control chars and keep a predictable filename for storage.
-  const safeBase = base
+  const safeBase = normalizeAscii(base)
+    .replace(/[^a-zA-Z0-9._\-\s]/g, '-')
     .replace(/[\\/:*?"<>|\u0000-\u001F]/g, '-')
     .replace(/\s+/g, '-')
+    .replace(/\.+/g, '.')
     .replace(/-+/g, '-')
+    .replace(/_+/g, '_')
+    .replace(/\.\-/g, '-')
+    .replace(/-\./g, '-')
+    .replace(/_\-/g, '-')
+    .replace(/-_/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 80) || 'file';
 
-  return `${safeBase}${ext}`;
+  const safeExt = normalizeAscii(ext)
+    .replace(/[^a-z0-9.]/g, '')
+    .replace(/\.{2,}/g, '.')
+    .slice(0, 10);
+
+  return `${safeBase}${safeExt}`;
 }
 
 /* ── Utility: detect retryable network/storage errors ── */
