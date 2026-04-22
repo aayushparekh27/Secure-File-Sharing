@@ -1,54 +1,96 @@
-# 🔐 VaultDrop — Secure File Sharing
+# 🔐 VaultDrop — Secure File Sharing Platform
 
 > 🚀 **Live Demo:** https://vaultdrop-app.vercel.app/
+>
+> **Securely share files up to 50MB instantly with end-to-end encryption, password protection, and expiry controls. No account required.**
 
-VaultDrop is a modern, secure, and fast file-sharing web application that allows users to upload files and share them instantly using a unique link — with optional password protection and expiry controls.
+## What is VaultDrop?
+
+VaultDrop is a **free, secure, and fast file-sharing web application** that allows users to upload and share files instantly using a unique link. It's perfect for:
+
+- 📧 Sending large files via email
+- 🔒 Sharing sensitive documents securely
+- 💼 Business file transfers
+- 👥 Temporary file sharing with expiry
+- 🎯 Quick file distribution without accounts
 
 ---
 
 ## ✨ Features
 
-* 📁 Upload files up to **50MB**
+### 🔐 Security First
+* **End-to-End Encryption** - Your files are encrypted during transfer
+* 🔒 **Password-Protected Files** - Add optional passwords to shared links
+* 🔐 **Secure Storage** - Files stored in encrypted Supabase Storage
+* 🛡️ **No Account Needed** - Direct upload without registration
+
+### 📤 Smart File Sharing
+* 📁 Upload files up to **50MB** per file
+* 📦 **Multiple File Upload** - Share entire folders at once
 * 🔗 Instant **shareable link generation**
-* 🔒 **Password-protected files**
-* ⏳ **Auto-expiry links** (time-based or download-based)
-* 📊 **Download tracking system**
-* 👁️ File preview (image, video, audio, PDF, text)
-* 📱 Fully responsive modern UI
-* ⚡ Fast performance using Supabase backend
-* 🧠 Smart UI states (loading, error, password gate)
+* 📊 **Download Tracking** - See how many times files were downloaded
+* ⏳ **Auto-Expiry Links** - Set time-based or download-based expiry
+* 📱 **QR Code Generation** - Share links via QR codes
+
+### 👁️ Preview & Access
+* 📸 **Image Preview** (JPG, PNG, GIF, WebP, SVG)
+* 🎬 **Video Preview** (MP4, WebM, MOV)
+* 🎵 **Audio Preview** (MP3, WAV, FLAC)
+* 📄 **PDF Viewer** - Preview PDFs directly
+* 📝 **Text Preview** - View text files instantly
+* ✅ Full file support for all types
+
+### 🎨 User Experience
+* 📱 **Fully Responsive Design** - Works on mobile, tablet, desktop
+* ⚡ **Fast Performance** - Optimized for speed
+* 🎯 **Drag & Drop Upload** - Intuitive file selection
+* 🌙 **Modern Dark UI** - Beautiful glassmorphism design
+* 🧠 **Smart UI States** - Loading, error, success states
+
+---
+
+## 🚀 Why Use VaultDrop?
+
+| Feature | VaultDrop | Email | Cloud Drive | Other Services |
+|---------|-----------|-------|-------------|-----------------|
+| No Account | ✅ | ✅ | ❌ | ❌ |
+| Free | ✅ | ✅ | ⚠️ | ⚠️ |
+| Encrypted | ✅ | ⚠️ | ⚠️ | ⚠️ |
+| Password Protected | ✅ | ❌ | ⚠️ | ✅ |
+| Expiry Controls | ✅ | ❌ | ❌ | ⚠️ |
+| Multiple Files | ✅ | ⚠️ | ✅ | ✅ |
+| QR Code | ✅ | ❌ | ❌ | ❌ |
+| Fast | ✅ | ✅ | ⚠️ | ⚠️ |
 
 ---
 
 ## 🧠 How It Works
 
-1. User uploads a file
-2. File is stored in **Supabase Storage**
-3. Metadata is saved in database
-4. Unique link is generated
-5. Receiver can:
-
-   * Enter password (if set)
-   * Preview file
-   * Download securely
+1. **Upload** - Select or drag & drop files (up to 50MB each)
+2. **Configure** - Set password, expiry, and other options
+3. **Generate** - Get instant shareable link and QR code
+4. **Share** - Send link to anyone
+5. **Download** - Recipient enters password (if set) and downloads securely
 
 ---
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-
-* HTML5
-* CSS3 (Glassmorphism UI)
-* JavaScript (Vanilla JS)
+* **HTML5** - Semantic markup
+* **CSS3** - Glassmorphism design, fully responsive
+* **JavaScript (Vanilla)** - No frameworks, lightweight and fast
 
 ### Backend
-
-* Supabase (Database + Storage)
+* **Supabase** - PostgreSQL Database + Encrypted Storage
+* **Supabase Auth** - Secure authentication
 
 ### Deployment
+* **Vercel** - Fast global edge network
 
-* Vercel
+### Additional Tools
+* **QRCode.js** - QR code generation
+* **Fetch API** - Modern file handling
 
 ---
 
@@ -56,20 +98,24 @@ VaultDrop is a modern, secure, and fast file-sharing web application that allows
 
 ```
 VaultDrop/
-│── index.html          # Upload page
-│── file.html           # Download page
+│── index.html              # Upload page
+│── file.html               # Download/preview page
+│── robots.txt              # SEO - Search engine indexing
+│── sitemap.xml             # SEO - URL map for search engines
+│── README.md               # Documentation
 │
 ├── css/
-│   ├── style.css       # Main UI styles
-│   └── file.css        # File page styles
+│   ├── style.css           # Main UI styles & animations
+│   └── file.css            # Download page styles
 │
 ├── js/
-│   ├── config.js       # Supabase config
-│   ├── upload.js       # Upload logic
-│   └── file.js         # Download logic
+│   ├── config.js           # Supabase configuration
+│   ├── upload.js           # Upload & batch handling logic
+│   ├── file.js             # Download, preview & password logic
+│   └── info.js             # Information & help content
 │
 └── supabase/
-    └── setup.sql       # Database setup
+    └── setup.sql           # Database schema setup
 ```
 
 ---

@@ -90,27 +90,67 @@ Or maybe… just the beginning.
 <html lang="en">
 
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7129898872816972"
     crossorigin="anonymous"></script>
   <meta name="google-adsense-account" content="ca-pub-7129898872816972">
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description"
-    content="VaultDrop is a secure file sharing app with encrypted uploads, shareable links, optional passwords, and expiry controls." />
-  <meta name="robots" content="index, follow" />
+    content="VaultDrop - Free secure file sharing with end-to-end encryption. Upload files up to 50MB, generate shareable links, password protection, expiry controls, and no account needed." />
+  <meta name="keywords" content="secure file sharing, free file upload, encrypted file transfer, shareable links, password protected files, temporary file sharing, file expiry, safe file sharing, no account needed, online file transfer" />
+  <meta name="author" content="Aayush Parekh" />
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
   <meta name="theme-color" content="#0b1020" />
   <link rel="canonical" href="https://vaultdrop-app.vercel.app/" />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="VaultDrop — Secure File Sharing" />
+  <meta property="og:title" content="VaultDrop — Secure File Sharing for Everyone" />
   <meta property="og:description"
-    content="Upload files securely, generate shareable links instantly, and protect them with passwords and expiry controls." />
+    content="Upload files securely with end-to-end encryption, generate instant shareable links with optional passwords and expiry controls. No account required." />
   <meta property="og:url" content="https://vaultdrop-app.vercel.app/" />
   <meta property="og:site_name" content="VaultDrop" />
+  <meta property="og:image" content="https://vaultdrop-app.vercel.app/og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="VaultDrop — Secure File Sharing" />
   <meta name="twitter:description"
-    content="Upload files securely, generate shareable links instantly, and protect them with passwords and expiry controls." />
-  <title>VaultDrop — Secure File Sharing</title>
+    content="Securely share files up to 50MB instantly with encrypted links, passwords, and expiry controls." />
+  <meta name="twitter:image" content="https://vaultdrop-app.vercel.app/og-image.jpg" />
+  <link rel="alternate" hreflang="en-US" href="https://vaultdrop-app.vercel.app/" />
+  <title>VaultDrop — Secure File Sharing | Free Encrypted File Transfer Online</title>
+  
+  <!-- Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "VaultDrop",
+    "description": "Secure file sharing platform with end-to-end encryption, password protection, and expiry controls",
+    "url": "https://vaultdrop-app.vercel.app/",
+    "applicationCategory": "UtilityApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Aayush Parekh"
+    },
+    "creator": {
+      "@type": "Person",
+      "name": "Aayush Parekh"
+    },
+    "featureList": [
+      "End-to-End Encryption",
+      "Password Protection",
+      "Link Expiry",
+      "Multiple File Upload",
+      "QR Code Generation",
+      "No Account Required"
+    ]
+  }
+  </script>
   <link rel="stylesheet" href="css/style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -121,6 +161,9 @@ Or maybe… just the beginning.
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- QRCode library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='75' font-size='75' fill='%23ff7a45'%3E%E2%AC%A1%3C/text%3E%3C/svg%3E">
 </head>
 
 <body>
@@ -160,15 +203,18 @@ Or maybe… just the beginning.
         <p class="drop-title">Drag & drop your file here</p>
         <p class="drop-sub">or</p>
         <label class="btn-browse" for="fileInput">Browse Files</label>
-        <input type="file" id="fileInput" class="sr-only-input"
+        <input type="file" id="fileInput" class="sr-only-input" multiple
           accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar,.7z,.json,.xml" />
-        <p class="drop-hint">Supports all file types · Max 50MB</p>
+        <p class="drop-hint">Supports all file types · Max 50MB per file</p>
       </div>
 
       <!-- File Options -->
       <div class="file-options is-hidden" id="fileOptions">
-        <!-- Selected File Preview -->
-        <div class="selected-file" id="selectedFile"></div>
+        <!-- Selected Files Preview -->
+        <div class="selected-files" id="selectedFiles"></div>
+
+        <!-- File Count Summary -->
+        <div class="files-summary" id="filesSummary"></div>
 
         <!-- Options Row -->
         <div class="options-grid">
@@ -198,7 +244,7 @@ Or maybe… just the beginning.
 
         <!-- Upload Button -->
         <button class="btn-upload" id="uploadBtn">
-          <span class="btn-text">Upload & Generate Link</span>
+          <span class="btn-text">Upload All Files</span>
           <span class="btn-arrow">→</span>
         </button>
       </div>
@@ -213,13 +259,17 @@ Or maybe… just the beginning.
           <div class="progress-bar" id="progressBar"></div>
         </div>
         <p class="progress-status" id="progressStatus">Uploading...</p>
+        <p class="progress-batch" id="progressBatch"></p>
       </div>
 
       <!-- Success State -->
       <div class="success-wrap is-hidden" id="successWrap">
         <div class="success-icon">✓</div>
-        <h3 class="success-title">File Uploaded!</h3>
+        <h3 class="success-title">Files Uploaded!</h3>
         <p class="success-sub">Your secure link is ready to share.</p>
+
+        <!-- Uploaded Files List -->
+        <div class="uploaded-files-list" id="uploadedFilesList"></div>
 
         <div class="link-box">
           <input type="text" class="link-input" id="shareLink" aria-label="Share link" title="Share link" readonly />
@@ -236,7 +286,7 @@ Or maybe… just the beginning.
             <div id="qrCode"></div>
             <p class="qr-label">QR Code</p>
           </div>
-          <button class="btn-new" id="newUploadBtn">Upload Another File</button>
+          <button class="btn-new" id="newUploadBtn">Upload More Files</button>
         </div>
       </div>
     </section>
@@ -265,12 +315,41 @@ Or maybe… just the beginning.
   </main>
 
   <footer class="footer">
-    <div class="footer-links">
-      <a href="#" id="linkAbout">About Us</a>
-      <a href="#" id="linkPrivacy">Privacy Policy</a>
-      <a href="#" id="linkContact">Contact</a>
+    <div class="footer-container">
+      <div class="footer-section">
+        <h3>VaultDrop</h3>
+        <p>Secure, fast, and free file sharing platform with end-to-end encryption.</p>
+      </div>
+      <div class="footer-section">
+        <h4>Features</h4>
+        <ul>
+          <li><a href="#" title="Secure file sharing">Secure Sharing</a></li>
+          <li><a href="#" title="Password protected files">Password Protection</a></li>
+          <li><a href="#" title="Link expiry controls">Expiry Controls</a></li>
+          <li><a href="#" title="Multiple file upload">Multiple Files</a></li>
+          <li><a href="#" title="QR code generation">QR Codes</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#" id="linkPrivacy" title="Read our privacy policy">Privacy Policy</a></li>
+          <li><a href="#" title="Terms of service">Terms of Service</a></li>
+          <li><a href="#" title="Security information">Security</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Connect</h4>
+        <ul>
+          <li><a href="#" id="linkContact" title="Contact us">Contact</a></li>
+          <li><a href="#" id="linkAbout" title="About VaultDrop">About</a></li>
+          <li><a href="https://github.com" title="GitHub repository" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+        </ul>
+      </div>
     </div>
-    <p>VaultDrop &copy; 2026 All rights reserved</p>
+    <div class="footer-bottom">
+      <p>&copy; 2026 VaultDrop. All rights reserved. | Built by <a href="#" title="Aayush Parekh">Aayush Parekh</a> | <a href="https://vaultdrop-app.vercel.app/sitemap.xml" title="Sitemap">Sitemap</a></p>
+    </div>
   </footer>
 
   <!-- High load advisory popup -->

@@ -90,16 +90,19 @@ const pwSubmit      = document.getElementById('pwSubmit');
 const pwError       = document.getElementById('pwError');
 
 /* ── State ── */
-let fileRecord = null; // will hold the DB row
+let fileRecord = null; // will hold the DB row for single file
+let batchFiles = null; // will hold array of files for batch
+let isBatchMode = false;
 
-/* ── Extract file ID from URL ── */
+/* ── Extract file ID or batch ID from URL ── */
 const params   = new URLSearchParams(window.location.search);
 const fileId   = params.get('id');
+const batchId  = params.get('batch');
 
 /* ── Entry point ── */
 (async function init() {
-  if (!fileId) {
-    showError('No file ID provided in the URL.');
+  if (!fileId && !batchId) {
+    showError('No file ID or batch ID provided in the URL.');
     return;
   }
 
@@ -110,41 +113,76 @@ const fileId   = params.get('id');
   }
 
   try {
-    /* ── 1. Fetch metadata from DB ── */
-    const { data, error } = await supabaseClient
-      .from('files')
-      .select('*')
-      .eq('id', fileId)
-      .single();
+    if (batchId) {
+      // BATCH MODE: Retrieve all files in this batch
+      isBatchMode = true;
+      const { data, error } = await supabaseClient
+        .from('files')
+        .select('*')
+        .like('storage_path', `${batchId}/%`)
+        .order('created_at', { ascending: true });
 
-    if (error || !data) {
-      showError('This file does not exist or the link is invalid.');
-      return;
+      if (error || !data || data.length === 0) {
+        showError('This batch does not exist or the link is invalid.');
+        return;
+      }
+
+      batchFiles = data;
+
+      // Check expiry on first file (all share same settings)
+      const firstFile = data[0];
+      if (firstFile.expires_at && new Date(firstFile.expires_at) < new Date()) {
+        showError('This file link has expired and is no longer available.');
+        return;
+      }
+
+      // Password gate (all files share same password)
+      if (firstFile.password) {
+        loadingState.style.display = 'none';
+        passwordState.style.display = 'block';
+        return;
+      }
+
+      // Show batch files
+      renderBatchFiles(data);
+
+    } else {
+      // SINGLE FILE MODE: Legacy support for old ?id= links
+      const { data, error } = await supabaseClient
+        .from('files')
+        .select('*')
+        .eq('id', fileId)
+        .single();
+
+      if (error || !data) {
+        showError('This file does not exist or the link is invalid.');
+        return;
+      }
+
+      fileRecord = data;
+
+      /* ── 2. Check expiry (time-based) ── */
+      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        showError('This file link has expired and is no longer available.');
+        return;
+      }
+
+      /* ── 3. Check download limit ── */
+      if (data.max_downloads !== null && data.download_count >= data.max_downloads) {
+        showError('This file has reached its maximum download limit.');
+        return;
+      }
+
+      /* ── 4. Password gate ── */
+      if (data.password) {
+        loadingState.style.display = 'none';
+        passwordState.style.display = 'block';
+        return; // wait for password submission
+      }
+
+      /* ── 5. Show file directly ── */
+      renderFileCard(data);
     }
-
-    fileRecord = data;
-
-    /* ── 2. Check expiry (time-based) ── */
-    if (data.expires_at && new Date(data.expires_at) < new Date()) {
-      showError('This file link has expired and is no longer available.');
-      return;
-    }
-
-    /* ── 3. Check download limit ── */
-    if (data.max_downloads !== null && data.download_count >= data.max_downloads) {
-      showError('This file has reached its maximum download limit.');
-      return;
-    }
-
-    /* ── 4. Password gate ── */
-    if (data.password) {
-      loadingState.style.display = 'none';
-      passwordState.style.display = 'block';
-      return; // wait for password submission
-    }
-
-    /* ── 5. Show file directly ── */
-    renderFileCard(data);
 
   } catch (err) {
     console.error(err);
@@ -157,13 +195,21 @@ pwSubmit.addEventListener('click', checkPassword);
 pwInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') checkPassword(); });
 
 function checkPassword() {
-  if (!fileRecord) return;
+  if (!fileRecord && !batchFiles) return;
   const entered = pwInput.value.trim();
 
-  if (entered === fileRecord.password) {
+  // Get password from fileRecord (single) or first batch file
+  const expectedPassword = fileRecord?.password || batchFiles?.[0]?.password;
+
+  if (entered === expectedPassword) {
     pwError.style.display = 'none';
     passwordState.style.display = 'none';
-    renderFileCard(fileRecord);
+    
+    if (isBatchMode) {
+      renderBatchFiles(batchFiles);
+    } else {
+      renderFileCard(fileRecord);
+    }
   } else {
     pwError.style.display = 'block';
     pwInput.value = '';
@@ -319,4 +365,125 @@ async function forceDownload(url, fileName) {
   a.remove();
 
   URL.revokeObjectURL(objectUrl);
+}
+
+/* ── Render batch of files ── */
+function renderBatchFiles(files) {
+  loadingState.style.display = 'none';
+  passwordState.style.display = 'none';
+  fileCard.style.display = 'block';
+
+  const previewArea = document.getElementById('previewArea');
+  previewArea.innerHTML = '';
+
+  // Show batch info
+  const firstFile = files[0];
+  document.getElementById('fileTypeBadge').innerHTML = '📦';
+  document.getElementById('fileName').textContent = `${files.length} File${files.length !== 1 ? 's' : ''}`;
+  document.getElementById('fileSize').textContent = formatSize(
+    files.reduce((sum, f) => sum + f.size, 0)
+  );
+  document.getElementById('fileUploaded').textContent = formatDate(firstFile.created_at);
+  document.getElementById('fileDownloads').textContent = `${firstFile.download_count} download${firstFile.download_count !== 1 ? 's' : ''}`;
+
+  // Expiry badge
+  const expiryEl = document.getElementById('fileExpiry');
+  if (firstFile.expires_at) {
+    expiryEl.textContent = `Expires ${formatDate(firstFile.expires_at)}`;
+    expiryEl.style.display = '';
+  } else if (firstFile.max_downloads) {
+    expiryEl.textContent = `${firstFile.max_downloads - firstFile.download_count} download${firstFile.max_downloads - firstFile.download_count !== 1 ? 's' : ''} left`;
+    expiryEl.style.display = '';
+  } else {
+    expiryEl.style.display = 'none';
+  }
+
+  // Build files list
+  const filesList = document.createElement('div');
+  filesList.className = 'batch-files-list';
+  filesList.style.cssText = 'display:flex; flex-direction:column; gap:0.75rem;';
+
+  files.forEach((file, idx) => {
+    const fileItem = document.createElement('div');
+    fileItem.className = 'batch-file-item';
+    fileItem.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: rgba(15, 22, 48, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      transition: background 0.2s;
+    `;
+
+    const icon = document.createElement('div');
+    icon.innerHTML = fileIcon(file.name);
+    icon.style.cssText = 'flex-shrink: 0; font-size: 1.2rem;';
+
+    const info = document.createElement('div');
+    info.style.cssText = 'flex: 1; min-width: 0;';
+    info.innerHTML = `
+      <div style="font-weight: 500; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #f4f7ff;" title="${file.name}">${file.name}</div>
+      <div style="font-size: 0.75rem; color: #a7b3d9; margin-top: 0.25rem;">${formatSize(file.size)}</div>
+    `;
+
+    const downloadBtn = document.createElement('button');
+    downloadBtn.className = 'btn-download-small';
+    downloadBtn.innerHTML = '↓';
+    downloadBtn.style.cssText = `
+      background: rgba(255, 122, 69, 0.2);
+      border: 1px solid rgba(255, 122, 69, 0.3);
+      color: #ff7a45;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: all 0.2s;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `;
+
+    downloadBtn.addEventListener('mouseover', () => {
+      downloadBtn.style.background = 'rgba(255, 122, 69, 0.3)';
+      downloadBtn.style.transform = 'scale(1.05)';
+    });
+
+    downloadBtn.addEventListener('mouseout', () => {
+      downloadBtn.style.background = 'rgba(255, 122, 69, 0.2)';
+      downloadBtn.style.transform = 'scale(1)';
+    });
+
+    downloadBtn.addEventListener('click', async () => {
+      try {
+        await forceDownload(file.url, file.name);
+        // Update download count
+        try {
+          await supabaseClient
+            .from('files')
+            .update({ download_count: (file.download_count || 0) + 1 })
+            .eq('id', file.id);
+        } catch (e) {
+          console.warn('Could not update download count:', e);
+        }
+      } catch (err) {
+        console.error('Download error:', err);
+        showToast('Download failed. Try again.', 'error');
+      }
+    });
+
+    fileItem.appendChild(icon);
+    fileItem.appendChild(info);
+    fileItem.appendChild(downloadBtn);
+    filesList.appendChild(fileItem);
+  });
+
+  previewArea.appendChild(filesList);
+
+  // Update download button to download all as zip (or hide for now)
+  const downloadBtn = document.getElementById('downloadBtn');
+  downloadBtn.style.display = 'none'; // Hide main download button for batch
 }

@@ -125,20 +125,22 @@ function generateId() {
 }
 
 /* ── State ── */
-let selectedFile = null;
+let selectedFiles = [];
 let isUploading = false;
 
 /* ── DOM refs ── */
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
 const fileOptions = document.getElementById('fileOptions');
-const selectedFileEl = document.getElementById('selectedFile');
+const selectedFilesEl = document.getElementById('selectedFiles');
+const filesSummaryEl = document.getElementById('filesSummary');
 const uploadBtn = document.getElementById('uploadBtn');
 const progressWrap = document.getElementById('progressWrap');
 const progressBar = document.getElementById('progressBar');
 const progressPercent = document.getElementById('progressPercent');
 const progressFileName = document.getElementById('progressFileName');
 const progressStatus = document.getElementById('progressStatus');
+const progressBatch = document.getElementById('progressBatch');
 const successWrap = document.getElementById('successWrap');
 const shareLink = document.getElementById('shareLink');
 const copyBtn = document.getElementById('copyBtn');
@@ -187,8 +189,8 @@ dropZone.addEventListener('dragleave', () => {
 dropZone.addEventListener('drop', (e) => {
   e.preventDefault();
   dropZone.classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file) handleFileSelect(file);
+  const files = e.dataTransfer.files;
+  if (files.length) handleFileSelect(files);
 });
 
 /* Click-to-browse also triggers from the dropzone */
@@ -201,45 +203,76 @@ dropZone.addEventListener('click', (e) => {
 });
 
 fileInput.addEventListener('change', () => {
-  if (fileInput.files[0]) handleFileSelect(fileInput.files[0]);
+  if (fileInput.files.length) handleFileSelect(fileInput.files);
 });
 
 /* ── Handle file selection ── */
-function handleFileSelect(file) {
-  // 50 MB limit
-  if (file.size > 50 * 1024 * 1024) {
-    showToast('File exceeds the 50MB limit.', 'error');
-    return;
-  }
+function handleFileSelect(files) {
+  // Convert FileList to array and filter
+  const newFiles = Array.from(files).filter(file => {
+    // 50 MB limit per file
+    if (file.size > 50 * 1024 * 1024) {
+      showToast(`${file.name} exceeds 50MB limit.`, 'error');
+      return false;
+    }
+    return true;
+  });
 
-  selectedFile = file;
+  if (!newFiles.length) return;
 
-  // Render the selected file row
-  selectedFileEl.innerHTML = `
-    <div class="sf-icon">${fileIcon(file.name)}</div>
-    <div class="sf-info">
-      <div class="sf-name" id="selectedFileNameDisplay"></div>
-      <div class="sf-size">${formatSize(file.size)}</div>
-    </div>
-    <button class="sf-remove" id="removeFileBtn" title="Remove">✕</button>
-  `;
-  
-  const nameDisplay = document.getElementById('selectedFileNameDisplay');
-  if (nameDisplay) {
-    nameDisplay.textContent = file.name;
-    nameDisplay.title = file.name;
-  }
+  // Add to selected files
+  selectedFiles = [...selectedFiles, ...newFiles];
+
+  // Render all selected files
+  renderSelectedFiles();
 
   // Hide dropzone, show options
   dropZone.style.display = 'none';
   fileOptions.style.display = 'block';
+}
 
-  document.getElementById('removeFileBtn').addEventListener('click', resetUpload);
+/* ── Render all selected files ── */
+function renderSelectedFiles() {
+  selectedFilesEl.innerHTML = '';
+  
+  selectedFiles.forEach((file, index) => {
+    const fileRow = document.createElement('div');
+    fileRow.className = 'sf-row';
+    fileRow.innerHTML = `
+      <div class="sf-icon">${fileIcon(file.name)}</div>
+      <div class="sf-info">
+        <div class="sf-name" title="${file.name}">${file.name}</div>
+        <div class="sf-size">${formatSize(file.size)}</div>
+      </div>
+      <button class="sf-remove" data-index="${index}" title="Remove">✕</button>
+    `;
+    
+    const removeBtn = fileRow.querySelector('.sf-remove');
+    removeBtn.addEventListener('click', () => removeFile(index));
+    selectedFilesEl.appendChild(fileRow);
+  });
+
+  // Update summary
+  const totalSize = selectedFiles.reduce((sum, f) => sum + f.size, 0);
+  filesSummaryEl.innerHTML = `
+    <div class="files-count">${selectedFiles.length} file${selectedFiles.length !== 1 ? 's' : ''} selected · ${formatSize(totalSize)} total</div>
+  `;
+}
+
+/* ── Remove individual file ── */
+function removeFile(index) {
+  selectedFiles.splice(index, 1);
+  
+  if (selectedFiles.length === 0) {
+    resetUpload();
+  } else {
+    renderSelectedFiles();
+  }
 }
 
 /* ── Reset to initial drop-zone state ── */
 function resetUpload() {
-  selectedFile = null;
+  selectedFiles = [];
   isUploading = false;
   uploadBtn.disabled = false;
   fileInput.value = '';
@@ -250,11 +283,13 @@ function resetUpload() {
   passwordInput.value = '';
   expirySelect.value = '24';
   qrCode.innerHTML = '';
+  selectedFilesEl.innerHTML = '';
+  filesSummaryEl.innerHTML = '';
 }
 
 /* ── Upload handler ── */
 uploadBtn.addEventListener('click', async () => {
-  if (!selectedFile || isUploading) return;
+  if (!selectedFiles.length || isUploading) return;
 
   // Validate Supabase config
   if (SUPABASE_URL.includes('YOUR_') || SUPABASE_ANON_KEY.includes('YOUR_')) {
@@ -265,11 +300,9 @@ uploadBtn.addEventListener('click', async () => {
   isUploading = true;
   uploadBtn.disabled = true;
 
-  const fileId = generateId();
+  const batchId = generateId();
   const expiry = expirySelect.value;
   const password = passwordInput.value.trim();
-  const safeFileName = sanitizeFileName(selectedFile.name);
-  const storagePath = `${fileId}/${safeFileName}`;
 
   // Calculate expiry timestamp (null = never)
   let expiresAt = null;
@@ -281,80 +314,113 @@ uploadBtn.addEventListener('click', async () => {
   /* ── Switch to progress view ── */
   fileOptions.style.display = 'none';
   progressWrap.style.display = 'block';
-  progressFileName.textContent = selectedFile.name;
   progressBar.style.width = '0%';
   progressPercent.textContent = '0%';
-  progressStatus.textContent = 'Uploading...';
+  progressStatus.textContent = 'Starting upload...';
 
-  // Simulate progress (Supabase JS v2 doesn't expose XHR progress natively)
-  let fakeProgress = 0;
-  const progressInterval = setInterval(() => {
-    fakeProgress = Math.min(fakeProgress + Math.random() * 15, 88);
-    progressBar.style.width = fakeProgress + '%';
-    progressPercent.textContent = Math.round(fakeProgress) + '%';
-  }, 200);
+  const uploadedFiles = [];
+  let totalSize = selectedFiles.reduce((sum, f) => sum + f.size, 0);
+  let uploadedSize = 0;
 
   try {
-    /* ── 1. Upload file to Supabase Storage ── */
-    let storageError = null;
-    for (let attempt = 1; attempt <= 3; attempt += 1) {
-      const { error } = await uploadWithFallback(storagePath, selectedFile);
-      storageError = error;
-      if (!storageError) break;
+    /* ── Upload each file sequentially ── */
+    for (let fileIndex = 0; fileIndex < selectedFiles.length; fileIndex++) {
+      const file = selectedFiles[fileIndex];
+      progressFileName.textContent = file.name;
+      progressBatch.textContent = `File ${fileIndex + 1} of ${selectedFiles.length}`;
 
-      if (!isTransientError(storageError) || attempt === 3) {
-        throw storageError;
-      }
+      const fileId = generateId();
+      const safeFileName = sanitizeFileName(file.name);
+      const storagePath = `${batchId}/${fileId}/${safeFileName}`;
 
-      progressStatus.textContent = `Retrying upload (${attempt}/2)...`;
-      await wait(350 * attempt);
-    }
+      // Progress for this file
+      let fileProgress = 0;
+      const progressInterval = setInterval(() => {
+        fileProgress = Math.min(fileProgress + Math.random() * 15, 88);
+        const totalProgress = ((uploadedSize + file.size * fileProgress / 100) / totalSize) * 100;
+        progressBar.style.width = totalProgress + '%';
+        progressPercent.textContent = Math.round(totalProgress) + '%';
+      }, 200);
 
-    /* ── 2. Get public URL ── */
-    const { data: urlData } = supabaseClient
-      .storage
-      .from(BUCKET_NAME)
-      .getPublicUrl(storagePath);
-
-    const publicUrl = urlData.publicUrl;
-
-    /* ── 3. Store metadata in database ── */
-    const metadata = {
-      id: fileId,
-      name: selectedFile.name,
-      size: selectedFile.size,
-      url: publicUrl,
-      storage_path: storagePath,
-      password: password || null,
-      expires_at: expiresAt,
-      max_downloads: maxDownloads,
-      download_count: 0,
-    };
-
-    let dbError = null;
-    for (let attempt = 1; attempt <= 3; attempt += 1) {
       try {
-        const { error } = await supabaseClient
-          .from('files')
-          .upsert(metadata, { onConflict: 'id' });
-        
-        dbError = error;
+        /* ── 1. Upload file to Supabase Storage ── */
+        let storageError = null;
+        for (let attempt = 1; attempt <= 3; attempt += 1) {
+          const { error } = await uploadWithFallback(storagePath, file);
+          storageError = error;
+          if (!storageError) break;
+
+          if (!isTransientError(storageError) || attempt === 3) {
+            throw storageError;
+          }
+
+          progressStatus.textContent = `Retrying upload (${attempt}/2)...`;
+          await wait(350 * attempt);
+        }
+
+        /* ── 2. Get public URL ── */
+        const { data: urlData } = supabaseClient
+          .storage
+          .from(BUCKET_NAME)
+          .getPublicUrl(storagePath);
+
+        const publicUrl = urlData.publicUrl;
+
+        /* ── 3. Store metadata in database ── */
+        const metadata = {
+          id: fileId,
+          name: file.name,
+          size: file.size,
+          url: publicUrl,
+          storage_path: storagePath,
+          password: password || null,
+          expires_at: expiresAt,
+          max_downloads: maxDownloads,
+          download_count: 0,
+        };
+
+        let dbError = null;
+        for (let attempt = 1; attempt <= 3; attempt += 1) {
+          try {
+            const { error } = await supabaseClient
+              .from('files')
+              .upsert(metadata, { onConflict: 'id' });
+            
+            dbError = error;
+          } catch (err) {
+            dbError = err;
+          }
+
+          if (!dbError) break;
+
+          if (!isTransientError(dbError) || attempt === 3) {
+            throw dbError;
+          }
+
+          progressStatus.textContent = `Finalizing link (${attempt}/2)...`;
+          await wait(300 * attempt);
+        }
+
+        uploadedFiles.push({
+          id: fileId,
+          name: file.name,
+          size: file.size,
+          url: publicUrl
+        });
+
+        clearInterval(progressInterval);
+        uploadedSize += file.size;
+        progressStatus.textContent = `Uploaded ${fileIndex + 1}/${selectedFiles.length}`;
+        progressBar.style.width = (uploadedSize / totalSize * 100) + '%';
+        progressPercent.textContent = Math.round(uploadedSize / totalSize * 100) + '%';
+
       } catch (err) {
-        dbError = err;
+        clearInterval(progressInterval);
+        throw err;
       }
-
-      if (!dbError) break;
-
-      if (!isTransientError(dbError) || attempt === 3) {
-        throw dbError;
-      }
-
-      progressStatus.textContent = `Finalizing link (${attempt}/2)...`;
-      await wait(300 * attempt);
     }
 
     /* ── Finalize progress ── */
-    clearInterval(progressInterval);
     progressBar.style.width = '100%';
     progressPercent.textContent = '100%';
     progressStatus.textContent = 'Done!';
@@ -364,8 +430,20 @@ uploadBtn.addEventListener('click', async () => {
       progressWrap.style.display = 'none';
       successWrap.style.display = 'block';
 
-      const link = `${BASE_URL}/file.html?id=${fileId}`;
+      const link = `${BASE_URL}/file.html?batch=${batchId}`;
       shareLink.value = link;
+
+      // Display uploaded files list
+      const uploadedFilesList = document.getElementById('uploadedFilesList');
+      uploadedFilesList.innerHTML = uploadedFiles.map((file, idx) => `
+        <div class="uploaded-file-item">
+          <div class="ufi-icon">${fileIcon(file.name)}</div>
+          <div class="ufi-info">
+            <div class="ufi-name" title="${file.name}">${file.name}</div>
+            <div class="ufi-size">${formatSize(file.size)}</div>
+          </div>
+        </div>
+      `).join('');
 
       // Generate QR Code
       qrCode.innerHTML = '';
@@ -377,12 +455,11 @@ uploadBtn.addEventListener('click', async () => {
         colorLight: '#111115',
       });
 
-      showToast('File uploaded successfully!', 'success');
+      showToast(`Successfully uploaded ${uploadedFiles.length} file(s)!`, 'success');
       isUploading = false;
     }, 600);
 
   } catch (err) {
-    clearInterval(progressInterval);
     console.error('Upload error:', err);
     progressStatus.textContent = 'Upload failed. Please try again.';
     progressBar.style.width = '0%';
