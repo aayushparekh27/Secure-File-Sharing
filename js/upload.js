@@ -178,6 +178,7 @@ const passwordInput = document.getElementById('passwordInput');
 const highLoadModal = document.getElementById('highLoadModal');
 const closeHighLoadModal = document.getElementById('closeHighLoadModal');
 const ackHighLoadModal = document.getElementById('ackHighLoadModal');
+const browseLabel = document.querySelector('label[for="fileInput"]');
 
 /* ── High-load advisory popup ── */
 function closeAdvisoryModal() {
@@ -222,12 +223,22 @@ dropZone.addEventListener('drop', (e) => {
 
 /* Click-to-browse also triggers from the dropzone */
 dropZone.addEventListener('click', (e) => {
-  // Prevent double-triggering if the user clicked the label natively.
-  // This causes mobile browsers to cancel the file picker selection.
-  if (e.target.tagName !== 'LABEL' && e.target.tagName !== 'INPUT') {
-    fileInput.click();
+  // Prevent double-triggering if the user clicked the native label/input.
+  // On mobile this can open and instantly close the picker on first tap.
+  const targetEl = e.target instanceof Element ? e.target : null;
+  if (targetEl && (targetEl.closest('label[for="fileInput"]') || targetEl.closest('input[type="file"]'))) {
+    return;
   }
+
+  fileInput.click();
 });
+
+if (browseLabel) {
+  // Keep label tap native and stop it from bubbling to dropzone click handler.
+  browseLabel.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+}
 
 fileInput.addEventListener('change', () => {
   if (fileInput.files.length) handleFileSelect(fileInput.files);
