@@ -101,7 +101,7 @@ async function uploadWithFallback(path, file) {
     const result = await supabaseClient
       .storage
       .from(BUCKET_NAME)
-      .upload(path, file, { cacheControl: '3600', upsert: true, contentType: file.type || undefined });
+      .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type || undefined });
 
     if (!result.error) return result;
 
@@ -116,6 +116,17 @@ async function uploadWithFallback(path, file) {
     // Network failures often THROW natively instead of returning an error object.
     return { data: null, error: err };
   }
+}
+
+function buildConflictSafePath(originalPath, attempt) {
+  const dot = originalPath.lastIndexOf('.');
+  if (dot <= 0) {
+    return `${originalPath}-${Date.now()}-${attempt}`;
+  }
+
+  const base = originalPath.slice(0, dot);
+  const ext = originalPath.slice(dot);
+  return `${base}-${Date.now()}-${attempt}${ext}`;
 }
 
 /* ── Utility: generate unique ID ── */
@@ -291,8 +302,13 @@ function resetUpload() {
 uploadBtn.addEventListener('click', async () => {
   if (!selectedFiles.length || isUploading) return;
 
+  if (!window.supabase || !supabaseClient) {
+    showToast('Upload service failed to load. Refresh and try again.', 'error');
+    return;
+  }
+
   // Validate Supabase config
-  if (SUPABASE_URL.includes('YOUR_') || SUPABASE_ANON_KEY.includes('YOUR_')) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_URL.includes('YOUR_') || SUPABASE_ANON_KEY.includes('YOUR_')) {
     showToast('Please configure Supabase in js/config.js first!', 'error');
     return;
   }
@@ -331,7 +347,7 @@ uploadBtn.addEventListener('click', async () => {
 
       const fileId = generateId();
       const safeFileName = sanitizeFileName(file.name);
-      const storagePath = `${batchId}/${fileId}/${safeFileName}`;
+      let storagePath = `${batchId}/${fileId}/${safeFileName}`;
 
       // Progress for this file
       let fileProgress = 0;
@@ -350,11 +366,16 @@ uploadBtn.addEventListener('click', async () => {
           storageError = error;
           if (!storageError) break;
 
+          const isConflict = /already exists|duplicate|conflict/i.test(String((storageError && storageError.message) || ''));
+          if (isConflict) {
+            storagePath = buildConflictSafePath(storagePath, attempt);
+          }
+
           if (!isTransientError(storageError) || attempt === 3) {
             throw storageError;
           }
 
-          progressStatus.textContent = `Retrying upload (${attempt}/2)...`;
+          progressStatus.textContent = `Retrying upload (${attempt}/3)...`;
           await wait(350 * attempt);
         }
 
@@ -397,7 +418,7 @@ uploadBtn.addEventListener('click', async () => {
             throw dbError;
           }
 
-          progressStatus.textContent = `Finalizing link (${attempt}/2)...`;
+          progressStatus.textContent = `Finalizing link (${attempt}/3)...`;
           await wait(300 * attempt);
         }
 
