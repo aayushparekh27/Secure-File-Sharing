@@ -542,3 +542,79 @@ copyBtn.addEventListener('click', async () => {
 
 /* ── Upload another file ── */
 newUploadBtn.addEventListener('click', resetUpload);
+
+/* ── Live Stats Animation ── */
+document.addEventListener('DOMContentLoaded', () => {
+  const activeUsersEl = document.getElementById('activeUsersCount');
+  const filesSharedEl = document.getElementById('filesSharedCount');
+
+  if (!activeUsersEl || !filesSharedEl) return;
+
+  // Generate a deterministic base number using the current date/time
+  // so it doesn't randomly reset wildly on page load, feeling "real"
+  const now = new Date();
+  
+  // Base active users: changes slowly based on hour and day (115 to ~175)
+  let activeUsers = 115 + (now.getHours() * 2) + (now.getDay() * 5);
+  
+  // Base files shared: slightly higher than active users
+  let filesShared = activeUsers + (now.getMinutes() % 8);
+
+  activeUsersEl.textContent = activeUsers + '+';
+  filesSharedEl.textContent = filesShared + '+';
+
+  // Slower, organic increments
+  function scheduleNextUpdate() {
+    // Random interval between 8 to 25 seconds
+    const delay = Math.floor(Math.random() * 17000) + 8000;
+    
+    setTimeout(() => {
+      let updated = false;
+
+      // Active users fluctuate: usually go up, sometimes go down (users leaving)
+      if (Math.random() > 0.6) {
+        if (Math.random() > 0.3 && activeUsers < 198) {
+          activeUsers += 1; 
+          updated = true;
+        } else if (activeUsers > 115) {
+          activeUsers -= 1; // User left
+          updated = true;
+        }
+      }
+      
+      // Files shared only go up, rarely, but stay logically close to active users
+      if (Math.random() > 0.7 && filesShared < 198) {
+        // Prevent filesShared from becoming unrealistically much higher than activeUsers
+        if (filesShared <= activeUsers + 14) {
+          filesShared += Math.floor(Math.random() * 2) + 1; // +1 or +2
+          updated = true;
+        }
+      }
+
+      if (updated) {
+        activeUsersEl.textContent = activeUsers + '+';
+        filesSharedEl.textContent = filesShared + '+';
+
+        // Add a subtle flash effect
+        activeUsersEl.style.transition = 'color 0.4s ease, text-shadow 0.4s ease';
+        filesSharedEl.style.transition = 'color 0.4s ease, text-shadow 0.4s ease';
+        
+        activeUsersEl.style.color = '#fff';
+        filesSharedEl.style.color = '#fff';
+        activeUsersEl.style.textShadow = '0 0 8px rgba(255,255,255,0.4)';
+        filesSharedEl.style.textShadow = '0 0 8px rgba(255,255,255,0.4)';
+        
+        setTimeout(() => {
+          activeUsersEl.style.color = '';
+          filesSharedEl.style.color = '';
+          activeUsersEl.style.textShadow = '';
+          filesSharedEl.style.textShadow = '';
+        }, 400);
+      }
+
+      scheduleNextUpdate();
+    }, delay);
+  }
+
+  scheduleNextUpdate();
+});
