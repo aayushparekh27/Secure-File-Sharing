@@ -136,6 +136,13 @@ const batchId  = params.get('batch');
         return;
       }
 
+      // Check download limit across all files in the batch
+      const maxDownloadsReached = data.some(f => f.max_downloads !== null && f.download_count >= f.max_downloads);
+      if (maxDownloadsReached) {
+        showError('This file has reached its maximum download limit.');
+        return;
+      }
+
       // Password gate (all files share same password)
       if (firstFile.password) {
         loadingState.style.display = 'none';
@@ -271,6 +278,15 @@ function renderFileCard(data) {
         .from('files')
         .update({ download_count: (data.download_count || 0) + 1 })
         .eq('id', data.id);
+        
+      data.download_count = (data.download_count || 0) + 1;
+      document.getElementById('fileDownloads').textContent = `${data.download_count} download${data.download_count !== 1 ? 's' : ''}`;
+      
+      if (data.max_downloads) {
+        const left = data.max_downloads - data.download_count;
+        const expiryEl = document.getElementById('fileExpiry');
+        expiryEl.textContent = `${Math.max(0, left)} download${left !== 1 ? 's' : ''} left`;
+      }
     } catch (e) {
       console.warn('Could not update download count:', e);
     }
@@ -384,7 +400,9 @@ function renderBatchFiles(files) {
     files.reduce((sum, f) => sum + f.size, 0)
   );
   document.getElementById('fileUploaded').textContent = formatDate(firstFile.created_at);
-  document.getElementById('fileDownloads').textContent = `${firstFile.download_count} download${firstFile.download_count !== 1 ? 's' : ''}`;
+  
+  const totalDownloads = files.reduce((sum, f) => sum + (f.download_count || 0), 0);
+  document.getElementById('fileDownloads').textContent = `${totalDownloads} download${totalDownloads !== 1 ? 's' : ''}`;
 
   // Expiry badge
   const expiryEl = document.getElementById('fileExpiry');
@@ -392,7 +410,9 @@ function renderBatchFiles(files) {
     expiryEl.textContent = `Expires ${formatDate(firstFile.expires_at)}`;
     expiryEl.style.display = '';
   } else if (firstFile.max_downloads) {
-    expiryEl.textContent = `${firstFile.max_downloads - firstFile.download_count} download${firstFile.max_downloads - firstFile.download_count !== 1 ? 's' : ''} left`;
+    const maxDlCount = Math.max(...files.map(f => f.download_count || 0));
+    const left = firstFile.max_downloads - maxDlCount;
+    expiryEl.textContent = `${Math.max(0, left)} download${left !== 1 ? 's' : ''} left`;
     expiryEl.style.display = '';
   } else {
     expiryEl.style.display = 'none';
@@ -466,6 +486,21 @@ function renderBatchFiles(files) {
             .from('files')
             .update({ download_count: (file.download_count || 0) + 1 })
             .eq('id', file.id);
+            
+          file.download_count = (file.download_count || 0) + 1;
+          
+          // Update total downloads display
+          const totalDownloads = files.reduce((sum, f) => sum + (f.download_count || 0), 0);
+          document.getElementById('fileDownloads').textContent = `${totalDownloads} download${totalDownloads !== 1 ? 's' : ''}`;
+
+          // Update expiry display if needed
+          if (firstFile.max_downloads) {
+            const maxDlCount = Math.max(...files.map(f => f.download_count || 0));
+            const left = firstFile.max_downloads - maxDlCount;
+            const expiryEl = document.getElementById('fileExpiry');
+            expiryEl.textContent = `${Math.max(0, left)} download${left !== 1 ? 's' : ''} left`;
+          }
+
         } catch (e) {
           console.warn('Could not update download count:', e);
         }
